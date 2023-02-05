@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Mine Sweeper</title>
+    <style>
+      .btn{
+        width: 100%;
+        height: 100%;
+        background-color: #EEEEEE;
+        font-size: 20px;
+      }
+      #floor{
+        border: 3px solid gray;
+        border-collapse: collapse;
+        margin: auto;
+        /* margin-top: 20px; */
+        background-color: #DADADA;
+      }
+      .cell{
+        border: 1px solid white;
+        width: 30px;
+        height: 30px;
+        text-align: center;
+        font-size: 20px;
+      }
+      .gamemenu{
+        display: flex;
+        flex-direction: row;
+        align-items: baseline;
+        width: 200px;
+        margin: auto;
+        margin-top: 30px;
+        margin-bottom: 20px;;
+        justify-content: center;
+        gap: 30px;
+      }
+      .menuvalue{
+        display: inline-block;
+        width: 50px;
+        /* height: 25px; */
+        font-size: 20px;
+        border: 1px solid black;
+        text-align: center;
+        padding-bottom: 3px;
+      }
+      #restart{
+        width: 30px;
+        height: 30px;
+        font-size: 20px;
+        font-weight: bold;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="container">
+      <div class="gamemenu">
+        <div class="menuvalue">000</div>
+        <input type="button" value="R" id="restart"/>
+        <div class="menuvalue">010</div>
+      </div>
+      <table id="floor"></table>
+    </div>
+  </body>
+  <script>
+    const land_width = 10;
+    const land_height = 8;
+    const num_mine = 10;
+    const gameData = [];
+    const $floor = document.getElementById('floor');
+
+    function countMine(p_row, p_clm){
+      let count = 0;
+      for(let i=-1; i<2; i++){
+        if(-1<p_row+i && p_row+i<land_height){
+          for(let j=-1; j<2; j++){
+            if(-1<p_clm+j && p_clm+j<land_width){
+              if(gameData[p_row+i][p_clm+j] === -10){
+                count -= 1;
+              }
+            }
+          }
+        }
+      }
+      return count;
+    }
+
+    function setData(){
+      for(let i=0; i<land_height; i++){
+        for(let j=0; j<land_width; j++){
+          if(gameData[i][j] !== -10){
+            gameData[i][j] = countMine(i,j);
+          }
+        }
+      }
+    }
+
+    function placeMines(){
+      const mineIndex = Array(land_height*land_width-num_mine).fill(0);
+      for(let i=0; i<num_mine; i++){
+        mineIndex.push(-10);
+      }
+      const arr1 = [];
+      while(mineIndex.length>0){
+        arr1.push(mineIndex.splice(Math.random()*mineIndex.length ,1)[0]);
+      }
+      arr1.forEach((elmt, idx) => {
+        gameData[indexChange(idx)[0]][indexChange(idx)[1]] = elmt;
+      });
+    }
+
+    function indexChange(a, b){
+      if(arguments.length === 2){
+        return land_width*a + b;
+      } else {
+        const row1 = Math.floor(a/land_width);
+        const clm1 = a%land_width;
+        return [row1, clm1];
+      }
+    }
+
+    function setDatabox(){
+      for(let i=0; i<land_height; i++){
+        const arr1 = [];
+        for(let j=0; j<land_width; j++){
+          arr1.push(0);
+        }
+        gameData.push(arr1);
+      }
+    }
+
+    function searchAround(p_row, p_clm){
+      for(let i=-1; i<2; i++){
+        if(-1<p_row+i && p_row+i<land_height){
+          for(let j=-1; j<2; j++){
+            if(-1<p_clm+j && p_clm+j<land_width){
+              openAround(p_row+i, p_clm+j);
+            }
+          }
+        }
+      }
+    }
+
+    function openAround(p_row, p_clm){
+      const data1 = gameData[p_row][p_clm];
+      const $td = document.getElementById(`${p_row},${p_clm}`);
+      if ( data1 === 0){
+        gameData[p_row][p_clm] = 10;
+        $td.removeChild($td.firstChild);
+        searchAround(p_row, p_clm);
+      } else if (-9<data1 && data1<0){
+        gameData[p_row][p_clm] *= -1;
+        $td.removeChild($td.firstChild);
+        $td.textContent = gameData[p_row][p_clm];
+      }
+    }
+
+    function onLeftClick(event){
+      const $target_parent = event.target.parentNode;
+      const row1 = $target_parent.parentNode.rowIndex;
+      const clm1 = $target_parent.cellIndex;
+      const data1 = gameData[row1][clm1];
+      if(data1 === -10){
+      } else if (data1 < 0){
+        gameData[row1][clm1] *= -1;
+        $target_parent.removeChild($target_parent.firstChild);
+        $target_parent.textContent = gameData[row1][clm1];
+      } else {
+        openAround(row1, clm1);
+      }
+    }
+
+    function onRightClick(event){
+      event.preventDefault();
+      const $target = event.target;
+      const pre_state = $target.textContent;
+      if (pre_state === '!'){
+        $target.textContent = '?';
+        $target.style.backgroundColor = 'yellow';
+      } else if (pre_state === '?'){
+        $target.textContent = '';
+        $target.style.backgroundColor = '#EEEEEE';
+        $target.addEventListener('click', onLeftClick);
+      } else {
+        $target.textContent = '!';
+        $target.style.backgroundColor = 'red';
+        $target.removeEventListener('click', onLeftClick);
+      }
+    }
+
+    function setButton($p_button){
+      $p_button.className = 'btn';
+      $p_button.addEventListener('contextmenu', onRightClick);
+      $p_button.addEventListener('click', onLeftClick);
+      return $p_button;
+    }
+
+    function setTable(){
+      for(let i=0; i<land_height; i++){
+        const $tr = document.createElement('tr');
+        for(let j=0; j<land_width; j++){
+          const $td = document.createElement('td');
+          const $button = document.createElement('button');
+          $td.className = 'cell';
+          $td.id = `${i},${j}`;
+          $td.appendChild(setButton($button));
+          $tr.appendChild($td);
+        }
+        $floor.appendChild($tr);
+      }
+    }
+
+    function gamestart(){
+      setTable();
+      setDatabox();
+      placeMines();
+      setData();
+
+    }
+
+    gamestart();
+
+  </script>
+</html>
