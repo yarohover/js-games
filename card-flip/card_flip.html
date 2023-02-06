@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script>
+      // 
+      // <카드 뒷면에 나올 글자들>
+      // 처음 부터 순서대로 하나씩 나열됨
+      // 최대 카드 수: 18개
+      // 
+      const index_lis = ['가', '나', '다', '라', '마', '바', '사', '아', '자', '차', '카', '타', '파', '하', '까', '따', '빠', '싸'];
+    </script>
+    <meta charset="utf-8">
+    <title>색깔 맞추기</title>
+    <style>
+      #floor{
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        justify-items: center;
+        width: 900px;
+        grid-gap: 30px;
+        margin: auto;
+        margin-top: 30px;
+      }
+      .card_box{
+        perspective: 800px;
+        display: inline-block;
+        width: 120px;
+        height: 180px;
+        /* position: relative; */
+        cursor: pointer;
+      }
+      .card{
+        /* position: absolute; */
+        width: 100%;
+        height: 100%;
+        transition: transform 0.8s;
+        transform-style: preserve-3d;
+      }
+      /* .card:hover{
+        transform: rotateY(180deg);
+      } */
+      .front{
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background-color: darkblue;
+        backface-visibility: hidden;
+      }
+      .back{
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background-color: darkblue;
+        transform: rotateY(180deg);
+        backface-visibility: hidden;
+      }
+      .card_box.flip .card{
+        transform: rotateY(180deg);
+      }
+
+      .front {
+        text-align: center;
+        font-size: 70px;
+        font-weight: bold;
+        color: #fff;
+        line-height: 180px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="floor"></div>
+  </body>
+  <script>
+    let num_col;
+    const col_lis = ['red', 'yellow', 'green', 'orange', 'indigo', 'pink', 'cyan', 'gray', 'black', 'blue', "poderblue", "tomato", "dodgerblue", "khaki"];
+    const col_box = [];
+    const col_shuf = [];
+    const clicked = [];
+    let opencard = 0;
+    let firstclick = 0;
+    let timestart;
+    let timeend;
+    const $floor = document.getElementById('floor');
+
+    function gameset(){
+      col_shuf.length = 0;
+      clicked.length = 0;
+      opencard = 0;
+      firstclick = 0;
+      $floor.innerHTML = '';
+      num_col = Math.min(Math.ceil( Math.abs(parseInt(prompt('카드개수를 입력하세요.\n-최대 18개(짝수)-'))) / 2), 9);
+      for (let i=0; i<num_col; i++){col_box.push(col_lis[i], col_lis[i]);}
+      while (col_box.length>0){
+      col_shuf.push(col_box.splice(Math.random()*col_box.length-1, 1)[0]);
+      }
+    }
+
+    function create_card(color, int){
+      const card_box = document.createElement('div');
+      card_box.className = 'card_box';
+      const card = document.createElement('div');
+      card.className = 'card';
+      const front = document.createElement('div');
+      front.className = 'front';
+      front.id = int+1;
+      front.innerText = index_lis[int];
+      const back = document.createElement('div');
+      back.className = 'back';
+      back.id = -(int+1);
+      back.style.backgroundColor = color;
+      card.appendChild(front);
+      card.appendChild(back);
+      card_box.appendChild(card);
+      $floor.appendChild(card_box);
+    }
+
+    function card_set(array){
+      array.forEach((elmt, idx) => {
+        create_card(elmt, idx);
+      });
+    }
+
+    function gamestart(){
+      gameset();
+      card_set(col_shuf);
+      for (let i=0; i<col_shuf.length; i++){
+        setTimeout(()=>{
+          $floor.childNodes[i].classList.add('flip');
+        }, 100 + i*30);
+      }
+      setTimeout(()=>{
+        $floor.childNodes.forEach((elmt)=>{
+          elmt.classList.remove('flip');
+        })
+        setevent();
+      }, 3000) 
+    }
+
+    function setevent(){
+      $floor.childNodes.forEach((elmt)=>{
+        elmt.addEventListener('click', function(event){
+          const clktarg = event.target;
+          cardclick(clktarg);
+        })
+      })
+    }
+
+    function cardclick(frelmt){
+      if(firstclick === 0){
+        timestart = new Date();
+        firstclick +=1;
+      }
+      const id0 = frelmt.id;
+      if(clicked.length<opencard+2 && !clicked.includes(id0)){
+        frelmt.parentNode.parentNode.classList.add('flip');
+        clicked.push(id0);
+      }
+      if(clicked.length === opencard+2){
+        anschek();
+      }
+    }
+
+    function anschek(){
+      const id1 = clicked[clicked.length-2];
+      const id2 = clicked[clicked.length-1];
+      const elmt1 = document.getElementById(-id1);
+      const elmt2 = document.getElementById(-id2);
+      setTimeout(()=>{
+        if(elmt1.style.backgroundColor === elmt2.style.backgroundColor){
+          opencard += 2;
+          winchek();
+        } else {
+          elmt1.parentNode.parentNode.classList.remove('flip');
+          elmt2.parentNode.parentNode.classList.remove('flip');
+          clicked.pop();
+          clicked.pop();
+        }
+      }, 500);
+    }
+
+    function winchek(){
+      if(opencard === num_col*2){
+        timeend = new Date();
+        alert(`축하합니다! ${(timeend-timestart)/1000}초 걸렸습니다.`);
+        gamestart();
+      }
+    }
+
+    gamestart();
+
+  </script>
+</html>
